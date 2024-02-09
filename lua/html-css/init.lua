@@ -19,21 +19,13 @@ local rootDir = scan.scan_dir(".", {
 	end,
 })
 
-local function mrgtbls(t1, t2)
-	for _, v in ipairs(t2) do
-		table.insert(t1, v)
-	end
-	return t1
-end
-
 function Source:setup()
 	require("cmp").register_source(self.source_name, Source)
 end
 
 function Source:new()
-	self.source_name = "html-css"
-	self.isRemote = "^https?://"
-	self.remote_classes = {}
+	self.source_name = "html_css"
+	self.isRemote = false
 	self.items = {}
 	self.ids = {}
 	self.href_links = {}
@@ -41,7 +33,7 @@ function Source:new()
 	-- reading user config
 	self.user_config = config.get_source_config(self.source_name) or {}
 	self.option = self.user_config.option or {}
-	self.file_extensions = self.option.file_extensions or {}
+	self.globs = self.option.globs or {}
 	self.style_sheets = self.option.style_sheets or {}
 	self.enable_on = self.option.enable_on or {}
 
@@ -55,7 +47,7 @@ function Source:new()
 	if vim.tbl_count(rootDir) ~= 0 then
 		-- read all local files on start
 		a.run(function()
-			l.read_local_files(self.file_extensions, function(classes, ids)
+			l.read_local_files(self.globs, function(classes, ids)
 				for _, class in ipairs(classes) do
 					table.insert(self.items, class)
 				end
@@ -81,21 +73,9 @@ function Source:complete(_, callback)
 		self.items = {}
 		self.ids = {}
 
-		-- handle embedded styles
-		a.run(function()
-			e.read_html_files(function(classes, ids)
-				for _, class in ipairs(classes) do
-					table.insert(self.items, class)
-				end
-				for _, id in ipairs(ids) do
-					table.insert(self.ids, id)
-				end
-			end)
-		end)
-
 		-- read all local files on start
 		a.run(function()
-			l.read_local_files(self.file_extensions, function(classes, ids)
+			l.read_local_files(self.globs, function(classes, ids)
 				for _, class in ipairs(classes) do
 					table.insert(self.items, class)
 				end
@@ -103,9 +83,6 @@ function Source:complete(_, callback)
 					table.insert(self.ids, id)
 				end
 			end)
-			for _, class in ipairs(self.remote_classes) do
-				table.insert(self.items, class)
-			end
 		end)
 
 		if self.current_selector == "class" then

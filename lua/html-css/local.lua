@@ -18,14 +18,13 @@ local qs = [[
 ]]
 
 ---@async
-M.read_local_files = a.wrap(function(file_extensions, cb)
+M.read_local_files = a.wrap(function(globs, cb)
 	local files = {}
-
 	-- WARNING need to check for performance in larger projects
-	for _, extension in ipairs(file_extensions) do
+	for _, glb in ipairs(globs) do
 		j:new({
 			command = "fd",
-			args = { "-a", "-e", "" .. extension .. "", "--exclude", "node_modules", "--exclude", "vendor" },
+			args = { "-a", "--exclude", "node_modules", "--exclude", "vendor", "-g", glb },
 			on_stdout = function(_, data)
 				table.insert(files, data)
 			end,

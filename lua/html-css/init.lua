@@ -27,8 +27,6 @@ function Source:new()
 	self.source_name = "html_css"
 	self.isRemote = false
 	self.items = {}
-	self.ids = {}
-	self.href_links = {}
 
 	-- reading user config
 	self.user_config = config.get_source_config(self.source_name) or {}
@@ -47,12 +45,9 @@ function Source:new()
 	if vim.tbl_count(rootDir) ~= 0 then
 		-- read all local files on start
 		a.run(function()
-			l.read_local_files(self.globs, function(classes, ids)
+			l.read_local_files(self.globs, function(classes)
 				for _, class in ipairs(classes) do
 					table.insert(self.items, class)
-				end
-				for _, id in ipairs(ids) do
-					table.insert(self.ids, id)
 				end
 			end)
 		end)
@@ -71,27 +66,81 @@ function Source:complete(_, callback)
 	-- if git_folder_exists == 1 then
 	if vim.tbl_count(rootDir) ~= 0 then
 		self.items = {}
-		self.ids = {}
 
 		-- read all local files on start
 		a.run(function()
-			l.read_local_files(self.globs, function(classes, ids)
+			l.read_local_files(self.globs, function(classes)
 				for _, class in ipairs(classes) do
 					table.insert(self.items, class)
-				end
-				for _, id in ipairs(ids) do
-					table.insert(self.ids, id)
 				end
 			end)
 		end)
 
-		if self.current_selector == "class" then
-			callback({ items = self.items, isComplete = false })
-		else
-			if self.current_selector == "id" then
-				callback({ items = self.ids, isComplete = false })
-			end
-		end
+		callback({ items = self.items, isComplete = false })
+	end
+end
+
+function is_available_html()
+	local node = ts.get_node({ bfnr = 0, lang = "html" })
+
+	if node == nil then
+		return false
+	end
+
+ 	local type = node:type()
+	local prev_sibling = node:prev_named_sibling()
+
+	if prev_sibling == nil then
+		return false
+	end
+
+	local prev_sibling_name = ts.get_node_text(prev_sibling, 0)
+
+	return prev_sibling_name == "class" and type == "quoted_attribute_value"
+end
+
+function is_available_ruby()
+  local node = ts.get_node({ bfnr = 0, lang = 'ruby' })
+
+	if node == nil then
+		return false
+	end
+
+	local status, hash_key_symbol_node = pcall(function(n)
+		return n:parent():parent():named_child(0)
+	end, node)
+
+	if not status then
+		return false
+	end
+
+	if hash_key_symbol_node == nil then
+		return false
+	end
+
+	local type = hash_key_symbol_node:type()
+  local text = ts.get_node_text(hash_key_symbol_node, 0)
+
+	-- P({ text, type })
+
+  return text == 'class' and type == 'hash_key_symbol'
+end
+
+function is_available_eruby()
+	local node = ts.get_node({ bfnr = 0, lang = 'embedded_template' })
+
+	if node == nil then
+		return false
+	end
+
+	local type = node:type()
+
+	if type == 'content' then
+		return is_available_html()
+	elseif type == 'code' then
+		return is_available_ruby()
+	else
+		return false
 	end
 end
 
@@ -100,38 +149,17 @@ function Source:is_available()
 		return false
 	end
 
-	if not vim.tbl_contains(self.option.enable_on, vim.bo.filetype) then
+  local ft = vim.bo.filetype
+
+	if not vim.tbl_contains({ 'ruby', 'eruby' }, ft) then
 		return false
 	end
 
-	local inside_quotes = ts.get_node({ bfnr = 0 })
-
-	if inside_quotes == nil then
-		return false
-	end
-
-	local type = inside_quotes:type()
-
-	local prev_sibling = inside_quotes:prev_named_sibling()
-	if prev_sibling == nil then
-		return false
-	end
-
-	local prev_sibling_name = ts.get_node_text(prev_sibling, 0)
-
-	if prev_sibling_name == "class" then
-		self.current_selector = "class"
-	elseif prev_sibling_name == "id" then
-		self.current_selector = "id"
-	end
-
-	if
-		prev_sibling_name == "class" or prev_sibling_name == "id" and type == "quoted_attribute_value"
-	then
-		return true
-	end
-
-	return false
+  if ft == 'ruby' then
+    return is_available_ruby()
+  elseif ft == 'eruby' then
+    return is_available_eruby()
+  end
 end
 
 return Source:new()

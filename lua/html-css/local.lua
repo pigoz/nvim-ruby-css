@@ -25,7 +25,7 @@ M.read_local_files = a.wrap(function(file_extensions, cb)
 	for _, extension in ipairs(file_extensions) do
 		j:new({
 			command = "fd",
-			args = { "-a", "-e", "" .. extension .. "", "--exclude", "node_modules" },
+			args = { "-a", "-e", "" .. extension .. "", "--exclude", "node_modules", "--exclude", "vendor" },
 			on_stdout = function(_, data)
 				table.insert(files, data)
 			end,

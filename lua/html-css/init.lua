@@ -2,10 +2,7 @@ local Source = {}
 local config = require("cmp.config")
 local a = require("plenary.async")
 local Job = require("plenary.job")
-local r = require("html-css.remote")
 local l = require("html-css.local")
-local e = require("html-css.embedded")
-local h = require("html-css.hrefs")
 
 local ts = vim.treesitter
 
@@ -56,35 +53,6 @@ function Source:new()
 
 	-- if git_folder_exists == 1 then
 	if vim.tbl_count(rootDir) ~= 0 then
-		self.href_links = h.get_hrefs()
-		self.style_sheets = mrgtbls(self.style_sheets, self.href_links) -- merge lings together
-
-		-- init the remote styles
-		for _, url in ipairs(self.style_sheets) do
-			if url:match(self.isRemote) then
-				a.run(function()
-					r.init(url, function(classes)
-						for _, class in ipairs(classes) do
-							table.insert(self.items, class)
-							table.insert(self.remote_classes, class)
-						end
-					end)
-				end)
-			end
-		end
-
-		-- handle embedded styles
-		a.run(function()
-			e.read_html_files(function(classes, ids)
-				for _, class in ipairs(classes) do
-					table.insert(self.items, class)
-				end
-				for _, id in ipairs(ids) do
-					table.insert(self.ids, id)
-				end
-			end)
-		end)
-
 		-- read all local files on start
 		a.run(function()
 			l.read_local_files(self.file_extensions, function(classes, ids)

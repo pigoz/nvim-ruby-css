@@ -29,8 +29,7 @@ function Source:setup()
 end
 
 function Source:new()
-	self.source_name = "html_css"
-	self.isRemote = false
+	self.source_name = "ruby_css"
 	self.items = {}
 
 	-- reading user config

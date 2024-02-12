@@ -2,7 +2,7 @@ local Source = {}
 local config = require("cmp.config")
 local a = require("plenary.async")
 local Job = require("plenary.job")
-local l = require("html-css.local")
+local l = require("ruby-css.local")
 
 local ts = vim.treesitter
 

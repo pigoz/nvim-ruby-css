@@ -1,6 +1,6 @@
 local M = {}
 local cmp = require("cmp")
-local u = require("html-css.utils.init")
+local u = require("ruby-css.utils.init")
 local a = require("plenary.async")
 local j = require("plenary.job")
 local ts = vim.treesitter

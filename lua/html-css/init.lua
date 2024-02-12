@@ -12,10 +12,15 @@ local rootDir = scan.scan_dir(".", {
 	add_dirs = true,
 	depth = 1,
 	respect_gitignore = true,
-	search_pattern = function(entry)
-		local subEntry = entry:sub(3) -- remove ./
-		-- %f[%a]git%f[^%a] -- old regex for matching .git
-		return subEntry:match(".git$") or subEntry:match("package.json") -- if project contains .git folder or package.json its gonna work
+	search_pattern = function(entry_path)
+		local entry = entry_path:sub(3) -- remove ./
+		local patterns = { ".git$", "package.json", "Gemfile" }
+		for _, pattern in ipairs(patterns) do
+			if entry:match(pattern) then
+				return true
+			end
+		end
+		return false
 	end,
 })
 

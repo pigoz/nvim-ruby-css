@@ -107,7 +107,14 @@ function is_available_ruby()
 	end
 
 	local status, hash_key_symbol_node = pcall(function(n)
-		return n:parent():parent():named_child(0)
+		local ntype = n:type()
+		if ntype == 'string_content' then
+			return n:parent():parent():named_child(0)
+		elseif ntype == 'string' then
+			return n:parent():named_child(0)
+		else
+			return nil
+		end
 	end, node)
 
 	if not status then
@@ -120,8 +127,6 @@ function is_available_ruby()
 
 	local type = hash_key_symbol_node:type()
   local text = ts.get_node_text(hash_key_symbol_node, 0)
-
-	-- P({ text, type })
 
   return text == 'class' and type == 'hash_key_symbol'
 end
